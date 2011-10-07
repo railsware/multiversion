@@ -42,3 +42,46 @@ So for each extension name we explicit knows:
 * which ruby version is required (through rvm alias)
 * which gems versions are required (through Gemfile filename )
 
+## Executing commands
+
+### Common syntax
+
+Synopsis:
+
+    multiversion [all|alias1,alias2,...] [exec|bundle|rspec] [args]
+
+Examples:
+
+    multiversion ar1_186 exec ruby --version
+    multiversion ar3_193 exec ruby --version
+
+
+### Main execution wrapper
+
+Execute any command under environment modified rvm/bundler:
+
+    multiversion [all|alias1,alias2,...] exec [command] [args]
+
+### Bundle command wrapper
+
+Execute bundle command under environment modified rvm/bundler:
+
+    multiversion [all|alias1,alias2,...] bundle [bundler_command] [args]
+
+Examples:
+
+    multiversion all bundle install
+
+
+### Rspec command wrapper
+
+Execute rspec command under environment modified rvm/bundler:
+
+    multiversion [all|alias1,alias2,...] rspec [rspec args]
+
+Examples:
+
+    multiversion all rspec -fs -c spec
+
+**Note**. It use *multiversion-rspec* bin that detects rspec version.
+

@@ -1,0 +1,120 @@
+#!/bin/bash
+
+MULTIVERSION_PATH=$(readlink -f $0)
+MULTIVERSION_BIN_DIR=$(dirname $MULTIVERSION_PATH)
+MULTIVERSION_RSPEC_PATH="$MULTIVERSION_BIN_DIR/multiversion-rspec"
+
+gemfiles=""
+
+find_gemfiles() {
+  gemfiles=`ls Gemfile.* | grep -v lock`
+
+  if [ $? -ne 0 ]; then
+    echo "No Gemfiles found"
+    exit 1
+  fi
+}
+
+gemfile_aliases=""
+find_gemfile_aliases() {
+  for gemfile in $gemfiles; do
+    alias=${gemfile#Gemfile.}
+    gemfile_aliases="$alias $gemfile_aliases"
+  done
+}
+
+csv_to_array() {
+  IFS=$','
+  _RETURN=( $1 )
+  unset IFS
+}
+
+check_gemfile_alias() {
+  for a in $gemfile_aliases; do
+    if [ "$a" = "$1" ]; then
+      return 0
+    fi
+  done
+  echo "Unknown alias '$1'. Known aliases: ${gemfile_aliases}"
+  exit 1
+}
+
+check_rvm_alias() {
+  output=`rvm alias show $1 2>&1`
+  if [[ "$output" =~ "ERROR" ]]; then
+    echo $output
+    echo "Please create rvm alias like: 'rvm alias create $1 [ruby-version]'"
+    exit 1
+  fi
+  return 0
+}
+
+process_with_bundle() {
+  local alias=$1;  shift
+  local command=$1; shift
+  local gemfile="Gemfile.$alias"
+
+  case $command in
+    bundle)
+      bundle_command=""
+      ;;
+    rspec)
+      bundle_command="exec $MULTIVERSION_RSPEC_PATH"
+      ;;
+    *)
+      bundle_command=$command
+      ;;
+  esac
+
+
+  echo "***"
+  echo "*** Executing with RVM '$alias' and BUNDLE_GEMFILE '$gemfile'"
+  echo "***"
+
+  cmd="BUNDLE_GEMFILE=Gemfile.$alias rvm $alias exec bundle $bundle_command $@"
+
+  [ -n "$MV_DEBUG" ] && echo $cmd
+  eval $cmd
+}
+
+process_execution() {
+  local alias=$1;   shift
+  local command=$1; shift
+
+  if [ "$alias" = 'all' ]; then
+    for a in ${gemfile_aliases[*]}; do
+      process_with_bundle "$a" "$command" "$@"
+    done
+  else
+    csv_to_array "$alias"
+    aliases=${_RETURN[*]}
+
+    for a in ${aliases[*]}; do
+      check_gemfile_alias $a
+      check_rvm_alias $a
+    done
+
+    for a in ${aliases[*]}; do
+      process_with_bundle "$a" "$command" "$@"
+    done
+  fi
+}
+
+print_usage() {
+  echo "Main command:"
+  echo "multiversion [all|alias1,alias2,...] exec command [args]"
+  echo "Helpers:"
+  echo "multiversion [all|alias1,alias2,...] rspec [rspec args]"
+  echo "multiversion [all|alias1,alias2,...] bundle [bundle args]"
+}
+
+case $2 in
+  exec|bundle|rspec)
+    find_gemfiles
+    find_gemfile_aliases
+    process_execution "$@"
+    ;;
+  *)
+    print_usage
+    exit 1
+esac

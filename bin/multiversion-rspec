@@ -1,0 +1,29 @@
+#!/usr/bin/env ruby
+
+#
+# Simple wrapper for spec/rspec script that:
+#
+# * detects rspec version from load path
+# * prepends spec to load path in case rspec v1
+#
+
+rspec_major_version = nil
+
+$LOAD_PATH.each do |path|
+  if path =~ /\/rspec-(\d+)/
+    rspec_major_version = $1.to_i
+    break
+  end
+end
+
+case rspec_major_version
+when 1
+  $LOAD_PATH.unshift(File.join(Dir.pwd, "spec"))
+  require 'spec'
+  exit ::Spec::Runner::CommandLine.run
+when 2
+  require 'rspec/core'
+  ::RSpec::Core::Runner.autorun
+else
+  abort "Can't detect rspec version"
+end
