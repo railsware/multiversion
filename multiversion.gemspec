@@ -7,9 +7,8 @@ Gem::Specification.new do |s|
   s.version     = Multiversion::VERSION
   s.authors     = ["Andriy Yanko"]
   s.email       = ["andriy.yanko@gmail.com"]
-  s.homepage    = ""
-  s.summary     = %q{TODO: Write a gem summary}
-  s.description = %q{TODO: Write a gem description}
+  s.homepage    = "https://github.com/railsware/multiversion"
+  s.summary     = %q{Testing your library against different gem versions and ruby versions using RVM and Bundler}
 
   s.rubyforge_project = "multiversion"
 
