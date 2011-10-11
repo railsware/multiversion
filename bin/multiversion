@@ -19,6 +19,11 @@ def get_gemfile_versions
   }.flatten.sort
 end
 
+def check_rvm_aliases(aliases)
+  rvm_aliases = `rvm alias list`.split("\n").map { |line| line.split("=>").first.strip }
+  unknown_aliases = aliases - rvm_aliases
+  abort "Unknown rvm aliases: #{unknown_aliases.inspect} " unless unknown_aliases.empty?
+end
 
 def execute_with_rvm_bundle(version, bundle_args)
   gemfile="Gemfile.#{version}"
@@ -61,6 +66,8 @@ if bundle_args.empty?
 else
   versions =  version == 'all' ?
     get_gemfile_versions : version.split(',')
+
+  check_rvm_aliases(versions)
 
   versions.each do |version|
     execute_with_rvm_bundle(version, bundle_args)
